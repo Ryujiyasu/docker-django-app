@@ -1,2 +1,6 @@
 # docker-django-app
-docker ComposeでDjangoの開発環境を作るテンプレート
+docker Composeを使ってDjangoの開発環境を作るテンプレートです。
+
+利用方法
+1. このリポジトリをローカル環境にクローン
+2. ターミナルでdocker-compose buildを実行
