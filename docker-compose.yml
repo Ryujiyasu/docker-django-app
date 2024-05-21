@@ -9,10 +9,36 @@ services:
     depends_on:
       - db
       - redis
+    environment:
+      DJANGO_DB_HOST: db
+      DJANGO_DB_NAME: db
+      DJANGO_DB_USER: docker
+      DJANGO_DB_PASSWORD: docker
     command: |
-      bash -c "python /usr/src/app/manage.py migrate && python /usr/src/app/manage.py runserver 0.0.0.0:8000"
+      sh -c "python /usr/src/app/manage.py migrate && python /usr/src/app/manage.py runserver 0.0.0.0:8000"
     ports:
       - 8000:8000
+
+  db:
+    platform: linux/amd64
+    image: mysql:8.0
+    environment:
+      MYSQL_USER: docker
+      MYSQL_PASSWORD: docker
+      MYSQL_ROOT_PASSWORD: local_root_password
+      MYSQL_DATABASE: db
+    ports:
+      - 3306:3306
+    command: --default-authentication-plugin=mysql_native_password
+    volumes:
+      - db_data:/var/lib/mysql 
+      
+  redis:
+    image: redis:latest
+    restart: always
+    tty: true
+    ports:
+      - 6379:6379
 
   celery:
     container_name: celery
@@ -27,36 +53,19 @@ services:
       - app
       - redis
 
-  monitor:
-    container_name: monitor
+  beat:
+    container_name: beat
     tty: true
     build:
       context: ./celery_app
     volumes:
       - ./celery_app:/usr/src/app
-    ports:
-      - 5555:5555
     working_dir: /usr/src/app
-    command: celery -A config flower --port=5555
+    command: bash -c "sleep 5 && celery -A config beat -l info"
     depends_on:
       - app
+      - db
       - redis
 
-  db:
-    platform: linux/amd64
-    image: mysql:5.7
-    environment:
-      MYSQL_USER: docker
-      MYSQL_PASSWORD: docker
-      MYSQL_ROOT_PASSWORD: local_root_password
-      MYSQL_DATABASE: db
-    ports:
-      - 3306:3306
-    command: --port 3306
-
-  redis:
-    image: redis:latest
-    restart: always
-    tty: true
-    ports:
-      - 6379:6379
+volumes:
+  db_data:
