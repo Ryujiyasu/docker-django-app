@@ -157,9 +157,9 @@ CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
 
 
 CELERYBEAT_SCHEDULE = {
-    'add-every-30-seconds': {
+    'appium': {
         "task": "polls.tasks.time_sleep_func",
-        "schedule": timedelta(seconds=30),
+        "schedule": crontab(hour='0,6,12,18', minute='0'),
         "kwargs": {"project_id": "0001"}
     },
 }

@@ -1,0 +1,6 @@
+<h2>地域登録</h2>
+
+<form method="POST">{% csrf_token %}
+  {{ form.as_p }}
+    <button type="submit" class="btn btn-primary">登録</button>
+</form>

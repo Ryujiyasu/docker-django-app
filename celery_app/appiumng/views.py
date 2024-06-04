@@ -1,3 +1,9 @@
 from django.shortcuts import render
 
-# Create your views here.
+from .models import Location, Profile, UserAgent, Search
+
+
+def index(request):
+    return render(request, 'appiumng/index.html')
+
+

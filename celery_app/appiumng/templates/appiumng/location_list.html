@@ -1,0 +1,28 @@
+<table class="table">
+    <thead>
+        <th>名前</th>
+        <th>メールアドレス</th>
+        <th>住所</th>
+        <th></th>
+        <th>
+            <a href="{% url 'create' %}" class="btn btn-primary">新規登録</a>
+        </th>
+    </thead>
+    <tbody>
+        {% for item in members %}
+            <tr>
+                <td>{{ item.name }}</td>
+                <td>{{ item.email}}</td>
+                <td>{{ item.address}}</td>
+                <td class="text-end">
+                    <a href="{% url 'update' item.id %}" class="btn btn-success">編集・詳細</a>
+                </td>
+                <td>
+          <form action="{% url 'delete' item.id %}" method="POST">{% csrf_token %}
+            <button class="btn btn-danger" type="submit" value="delete">削除</button>
+          </form>
+        </td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
