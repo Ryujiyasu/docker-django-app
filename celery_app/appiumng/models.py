@@ -5,6 +5,10 @@ from django.db import models
 
 
 class Location(models.Model):
+    class Meta:
+        verbose_name = '位置情報'
+        verbose_name_plural = '位置情報'
+    
     name = models.CharField(max_length=200)
     latitude = models.FloatField()
     longitude = models.FloatField()
@@ -13,6 +17,9 @@ class Location(models.Model):
         return self.name
 
 class Profile(models.Model):
+    class Meta:
+        verbose_name = 'プロフィール数設定'
+        verbose_name_plural = 'プロフィール数設定'
     date = models.DateField()
     profile_sum = models.IntegerField()
     
@@ -20,12 +27,19 @@ class Profile(models.Model):
         return str(self.date)
 
 class UserAgent(models.Model):
+    class Meta:
+        verbose_name = 'UA設定'
+        verbose_name_plural = 'UA設定'
+    name = models.CharField(max_length=200)
     user_agent = models.CharField(max_length=200)
     
     def __str__(self):
         return self.user_agent
 
 class Search(models.Model):
+    class Meta:
+        verbose_name = '検索情報設定'
+        verbose_name_plural = '検索情報設定'
     search = models.CharField(max_length=200)
     location = models.ForeignKey(Location, on_delete=models.CASCADE, null=True)
     user_agent = models.ForeignKey(UserAgent, on_delete=models.CASCADE, null=True)
@@ -34,6 +48,18 @@ class Search(models.Model):
     
     def __str__(self):
         return self.search
+
+class SearchResult(models.Model):
+    class Meta:
+        verbose_name = '検索結果'
+        verbose_name_plural = '検索結果'
+    search = models.ForeignKey(Search, on_delete=models.CASCADE)
+    datetime = models.DateTimeField()
+    success = models.BooleanField()
+    memo = models.TextField()
+    
+    def __str__(self):
+        return str(self.datetime.strftime('%Y年%m月%d日 %H:%M')) + " " + self.search.search 
     
 
 
