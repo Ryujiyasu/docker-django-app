@@ -5,13 +5,12 @@ from django.db.models import QuerySet
 
 from celery.result import AsyncResult
 
-from polls.tasks import time_sleep_func
+from polls.tasks import appium
 
 
 class Command(BaseCommand):
     def handle(self, *args, **options):  # type: ignore
-        project_id: str = "0001"
-        task: AsyncResult = time_sleep_func.delay(project_id)  # type: ignore
+        task: AsyncResult = appium.delay()  # type: ignore
         print("task.status", task.status)  # type: ignore
 
         task_id: str = task.id  # type: ignore

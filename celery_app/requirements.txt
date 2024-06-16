@@ -5,3 +5,6 @@ flower==2.0.1
 django-celery-results
 django-celery-beat
 mysqlclient
+Appium-Python-Client
+beautifulsoup4
+pandas
