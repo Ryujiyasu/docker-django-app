@@ -25,6 +25,16 @@ class Profile(models.Model):
     
     def __str__(self):
         return str(self.date)
+    
+class Device(models.Model):
+    name = models.CharField(max_length=200)
+    platform = models.CharField(max_length=200, choices=(('ios', 'iOS'), ('android', 'Android')))
+    Profile = models.ForeignKey(Profile, on_delete=models.CASCADE)
+    active = models.BooleanField(default=True)
+    udid = models.CharField(max_length=200, null=True)
+    
+    def __str__(self):
+        return self.name
 
 class UserAgent(models.Model):
     class Meta:
@@ -57,6 +67,7 @@ class SearchResult(models.Model):
     datetime = models.DateTimeField()
     success = models.BooleanField()
     memo = models.TextField()
+    Device = models.ForeignKey(Device, on_delete=models.CASCADE, null=True)
     
     def __str__(self):
         return str(self.datetime.strftime('%Y年%m月%d日 %H:%M')) + " " + self.search.search 

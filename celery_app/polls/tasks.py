@@ -12,6 +12,7 @@ import logging
 from selenium.webdriver.common.action_chains import ActionChains, ActionBuilder, PointerInput
 from selenium.webdriver.common.actions import interaction
 from selenium.webdriver.common.keys import Keys
+from appiumng.models import Search, Profile
 
     
 logging.basicConfig(level=logging.INFO,
@@ -32,26 +33,12 @@ class WebSearcher:
 	def __init__(self) -> None:
 		pass
 	
-options = AppiumOptions()
 
-options.load_capabilities({
-	"platformName": "iOS",
-	"appium:automationName": "XCUITest",
-	"appium:includeSafariInWebviews": True,
-	"appium:connectHardwareKeyboard": True,
-	"startIWDP": True
-})
-url = "http://localhost:4444/wd/hub"
-# location.tsv を読み込む
-location = pd.read_csv("data/location.csv", index_col=0)
-# 重複削除
-# search.tsv を読み込む
-search = pd.read_csv("data/search.csv", index_col=0)
+
 
 
 
 def change_airplane_mode(driver):
-	# 機内モードON／OFF
 		driver.terminate_app('com.apple.mobilesafari')
 
 		el1 = driver.find_element(by=AppiumBy.CLASS_NAME, value="XCUIElementTypeSwitch")
@@ -625,120 +612,104 @@ def search_data(driver, search_word, UA, profile,latitude, longitude, ip=""):
 
 
 def work(airplane_mode, latitude, longitude, search_word, profile, UA):
+	logger.info(f'airplane_mode:{airplane_mode} latitude:{latitude} longitude:{longitude} search_word:{search_word} profile:{profile} UA:{UA}')
+	options = AppiumOptions()
+	options.load_capabilities({
+		"platformName": "iOS",
+		"appium:automationName": "XCUITest",
+		"appium:includeSafariInWebviews": True,
+		"appium:connectHardwareKeyboard": True,
+		"startIWDP": True
+	})
+	url = "http://host.docker.internal:4444/wd/hub"
+	driver = webdriver.Remote(url, options=options)
+	driver.implicitly_wait(3)
+	time.sleep(1)
+
+	driver.terminate_app('com.apple.mobilesafari')
+	if airplane_mode:
+		change_airplane_mode(driver)
+	logger.info("ホームに戻る")
+	driver.execute_script('mobile: pressButton', {'name': 'home'})
 	
+
+	logger.info("位置情報を設定")
+	logger.info(latitude)
+	logger.info(longitude)
+
+	if latitude == 0 and longitude == 0:
+		logger.info("位置情報を設定しない")
+	else:
+		driver.set_location(latitude,longitude, 0)
+	time.sleep(1)
+	
+	native_UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 14_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.1 Mobile/15E148 Safari/604.1'
+	change_ua(driver, native_UA)
+	time.sleep(1)
+	ip = ""
+	count = 0
 	while True:
-		try:
+		logger.info(count)
+		if count > 5:
+			element = driver.find_element(by=AppiumBy.XPATH, value='//*[@id="tmContHeadStr"]/div/div[1]/div[3]/div[1]')
+			element.click()
+		time.sleep(5)
+		driver.get('https://www.cman.jp/network/support/go_access.cgi')
+		time.sleep(5)
+		logger.info(driver.contexts)
+		time.sleep(1)
+		logger.info(driver.contexts)
+		time.sleep(1)
+		logger.info(driver.contexts)
+		for i in range(len(driver.contexts)):
+			logger.info(driver.contexts[i])
 
-			logger.info(f'airplane_mode:{airplane_mode} latitude:{latitude} longitude:{longitude} search_word:{search_word} profile:{profile} UA:{UA}')
-			driver = webdriver.Remote(url, options=options)
-			driver.implicitly_wait(3)
-			time.sleep(1)
-
-			driver.terminate_app('com.apple.mobilesafari')
-			if airplane_mode:
-				change_airplane_mode(driver)
-			logger.info("ホームに戻る")
-			driver.execute_script('mobile: pressButton', {'name': 'home'})
-			
-
-			logger.info("位置情報を設定")
-			logger.info(latitude)
-			logger.info(longitude)
-
-			if latitude == 0 and longitude == 0:
-				logger.info("位置情報を設定しない")
+			if i == 0:
+				continue
+			try:
+				driver.switch_to.context(driver.contexts[i])
+				time.sleep(1)
+				ip = driver.find_element(by=AppiumBy.XPATH, value='//*[@id="tmContHeadStr"]/div/div[1]/div[3]/div[1]').text
+			except:
+				pass
+			if ip == "":
+				count += 1
+				continue
 			else:
-				driver.set_location(latitude,longitude, 0)
+				break
+		if ip == "":
+			driver.terminate_app('com.apple.mobilesafari')
 			time.sleep(1)
-			
-			native_UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 14_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.1 Mobile/15E148 Safari/604.1'
-			change_ua(driver, native_UA)
-			time.sleep(1)
-			ip = ""
-			count = 0
-			while True:
-				logger.info(count)
-				if count > 5:
-					element = driver.find_element(by=AppiumBy.XPATH, value='//*[@id="tmContHeadStr"]/div/div[1]/div[3]/div[1]')
-					element.click()
-				time.sleep(5)
-				driver.get('https://www.cman.jp/network/support/go_access.cgi')
-				time.sleep(5)
-				logger.info(driver.contexts)
-				time.sleep(1)
-				logger.info(driver.contexts)
-				time.sleep(1)
-				logger.info(driver.contexts)
-				for i in range(len(driver.contexts)):
-					logger.info(driver.contexts[i])
-
-					if i == 0:
-						continue
-					try:
-						driver.switch_to.context(driver.contexts[i])
-						time.sleep(1)
-						ip = driver.find_element(by=AppiumBy.XPATH, value='//*[@id="tmContHeadStr"]/div/div[1]/div[3]/div[1]').text
-					except:
-						pass
-					if ip == "":
-						count += 1
-						continue
-					else:
-						break
-				if ip == "":
-					driver.terminate_app('com.apple.mobilesafari')
-					time.sleep(1)
-					logger.info(driver.context)
-					driver.switch_to.context('NATIVE_APP')
-					logger.info(driver.context)
-				else:
-					logger.info('ip:')
-					logger.info(ip)
-					break
-
-
 			logger.info(driver.context)
 			driver.switch_to.context('NATIVE_APP')
 			logger.info(driver.context)
-			time.sleep(1)
-			profile = change_profile(driver)
-
-			search_data(driver, search_word, UA, profile, latitude, longitude, ip)
-
-			time.sleep(1)
-			## safariを止める
-			driver.terminate_app('com.apple.mobilesafari')
-
-
-			logger.info("正常終了")
-			
-			time.sleep(3)
-			driver.quit()
-			time.sleep(3)
+		else:
+			logger.info('ip:')
+			logger.info(ip)
 			break
+
+
+	logger.info(driver.context)
+	driver.switch_to.context('NATIVE_APP')
+	logger.info(driver.context)
+	time.sleep(1)
+	profile = change_profile(driver)
+
+	search_data(driver, search_word, UA, profile, latitude, longitude, ip)
+
+	time.sleep(1)
+	## safariを止める
+	driver.terminate_app('com.apple.mobilesafari')
+
+
+	logger.info("正常終了")
+	
+	time.sleep(3)
+	driver.quit()
+	time.sleep(3)
+	logger.info("終了")
 			
 			
-
-		except Exception as e:
-			logger.info(e)
-			time.sleep(5)
-			try:
-				driver.terminate_app('com.apple.mobilesafari')
-				elements = driver.find_elements(by=AppiumBy.ACCESSIBILITY_ID, value="モバイル通信")
-				if len(elements) > 0:
-					elements[0].click()
-			except:
-				pass
-			time.sleep(3)
-
-			logger.info("異常終了")
-			driver.quit()
-			time.sleep(3)
-
-def dummy_work():
-	time.sleep(5)
-	logger.info("dammy_work")
-
 def profile_create(profile_sum):
 	print(profile_sum)
 	driver = webdriver.Remote(url, options=options)
@@ -793,159 +764,13 @@ def profile_create(profile_sum):
 
 @shared_task
 def appium() -> None:
-    airplane_mode = True
-    no_search_count = 0
-    no_search_flg = False
-    for i in range(len(search)):
-        # location に移動
-        start_time_str = search.iloc[i]["検索開始時間"] # 0:00
-        end_time_str = search.iloc[i]["検索終了時間"] # 23:59
-        now = datetime.datetime.now()
-        start_time = datetime.datetime.strptime(start_time_str, '%H:%M')
-        start_time = start_time.replace(year=now.year, month=now.month, day=now.day)
-        end_time = datetime.datetime.strptime(end_time_str, '%H:%M')
-        end_time = end_time.replace(year=now.year, month=now.month, day=now.day)
-        now = datetime.datetime.now()
-        search = search.fillna("0")
-        # dayを知りたい
-        logger.info(now.date())
-
-        try:
-            if datetime.datetime.now().date() != datetime.datetime.strptime(search.iloc[i]['exec_time'],'%Y/%m/%d %H:%M:%S').date():
-                search.iat[i, 7] = datetime.datetime.now().strftime('%Y/%m/%d %H:%M:%S')
-                search.iat[i, 8] = 0.0
-                search.to_csv("data/search.csv")
-                continue
-    
-        except:
-            try:
-                if datetime.datetime.now().date() != datetime.datetime.strptime(search.iloc[i]['exec_time'],'%Y/%m/%d %H:%M').date():
-                    search.iat[i, 7] = datetime.datetime.now().strftime('%Y/%m/%d %H:%M:%S')
-                    search.iat[i, 8] = 0.0
-                    search.to_csv("data/search.csv")
-                    continue
-
-
-            except:
-                search.iat[i, 7] = datetime.datetime.now().strftime('%Y/%m/%d %H:%M:%S')
-                search.iat[i, 8] = 0.0
-                search.to_csv("data/search.csv")
-                continue
-
-        today_profile = ''
-        
-        with open("data/profile.csv", "r") as f:
-            csv_reader = csv.reader(f)
-            for row in csv_reader:
-                if row[0] == datetime.datetime.now().strftime('%Y/%-m/%d') and not (row[2] == "1" or row[2] == "1.0"):
-                    today_profile = row[0]
-                    profile_sum = int(row[1])
-                    break
-                elif row[0] == datetime.datetime.now().strftime('%Y/%-m/%d'):
-                    today_profile = ''
-                    profile_sum = int(row[1])
-        print('today_profile')
-        print(today_profile)
-
-        if today_profile != '':
-            profile_create(profile_sum)
-            print("profile_created")
-            # csvの該当の日付の行を1にする
-            with open("data/profile.csv", "r") as f:
-                csv_reader = csv.reader(f)
-                rows = [row for row in csv_reader]
-            with open("data/profile.csv", "w") as f:
-                csv_writer = csv.writer(f)
-                for row in rows:
-                    if row[0] == today_profile:
-                        row[2] = 1
-                    csv_writer.writerow(row)
-        else:
-            logger.info("profileの指定がない")
-            d = 0
-            break_flg = False
-            while True:
-                today = datetime.datetime.now() - datetime.timedelta(days=d)
-                logger.info('today')
-                logger.info(today.strftime('%Y/%-m/%d'))
-                
-                with open("data/profile.csv", "r") as f:
-                    csv_reader = csv.reader(f)
-                    for row in csv_reader:
-                        print(row[0])
-                        if row[0] == today.strftime('%Y/%-m/%d'):
-                            today_profile = ''
-                            profile_sum = int(row[1])
-                            break_flg = True
-                            break
-                d += 1
-                if d > 60:
-                    profile_sum = 100
-                    profile_create(profile_sum)
-                    print("profile_created")
-                    break_flg = True
-                    break
-
-                if break_flg:
-                    break
-
-
-        if now > start_time and now < end_time:
-            
-            UA = search.iloc[i]["UA"]
-            search_word = search.iloc[i]["検索ワード"]
-
-            Location_name = search.iloc[i]["location"]
-
-            logger.info(Location_name == "0")
-            logger.info(Location_name)
-            
-            if Location_name == "0":
-                latitude = 0
-                longitude = 0
-            elif Location_name == "":
-                latitude = 0
-                longitude = 0
-            elif Location_name not in location.index:
-                latitude = 0
-                longitude = 0
-            else:
-                # location 一番上のものを取得
-                latitude = location.at[Location_name,'latitude']
-                longitude = location.at[Location_name,'longitude']
-                try:
-                    if len(latitude) > 1:
-                        latitude = latitude.iloc[0]
-                        longitude = longitude.iloc[0]
-                except:
-                    pass
-
-            logger.info('latitude')
-            logger.info(latitude)
-            logger.info('longitude')
-            logger.info(longitude)
-
-
-            logger.info(start_time)
-            logger.info(end_time)
-
-            if search.iloc[i]["exec_count"] >= search.iloc[i]["検索上限"]:
-                logger.info("検索上限に達したので次の検索に移ります")
-                continue
-
-            
-
-            
-            work(airplane_mode, latitude,longitude, search_word, '', UA)				
-            print(search.iloc[i]["exec_count"])
-            search.iat[i, 8] = search.iloc[i]["exec_count"] + 1.0
-
-
-
-            search.iat[i, 7] = datetime.datetime.now().strftime('%Y/%m/%d %H:%M:%S')
-            print(search.iloc[i]["exec_count"])
-            search.to_csv("data/search.csv")
-            no_search_flg = True
-            logger.info(f'検索間隔{int(search.iloc[i]["検索間隔"])}分です。')
-            time.sleep(int(search.iloc[i]['検索間隔']) * 60)
-            logger.info(f'検索を開始します。')
+	airplane_mode = True
+	searchs = Search.objects.all()
+	for search_data in searchs:
+		logger.info(search_data)
+		location = search_data.location
+		#Profileの中で一番日付が最新のものを取得
+		profile = Profile.objects.all().order_by('-date')[0]
+		user_agent = search_data.user_agent
+		work(airplane_mode, location.latitude, location.longitude, search_data.search, profile, user_agent.user_agent)
+		

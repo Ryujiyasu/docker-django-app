@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.utils.html import format_html
-from .models import Location, Profile, UserAgent, Search, SearchResult
+from .models import Location, Profile, UserAgent, Search, SearchResult, Device
 from django.contrib import auth
 from django.utils import timezone
 
@@ -83,3 +83,4 @@ admin.site.register(Profile)
 admin.site.register(UserAgent)
 admin.site.register(Search, SearchAdmin)
 admin.site.register(SearchResult,SearchResultAdmin)
+admin.site.register(Device)
