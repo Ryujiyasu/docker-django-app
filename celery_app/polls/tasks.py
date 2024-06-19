@@ -12,7 +12,7 @@ import logging
 from selenium.webdriver.common.action_chains import ActionChains, ActionBuilder, PointerInput
 from selenium.webdriver.common.actions import interaction
 from selenium.webdriver.common.keys import Keys
-from appiumng.models import Search, Profile
+from appiumng.models import Search, Profile, Device
 
     
 logging.basicConfig(level=logging.INFO,
@@ -766,11 +766,17 @@ def profile_create(profile_sum):
 def appium() -> None:
 	airplane_mode = True
 	searchs = Search.objects.all()
+	#Profileの中で一番日付が最新のものを取得
+	profile = Profile.objects.all().order_by('-date')[0]
+	devices = Device.objects.all()
+	for device in devices:
+		if device
+	
+	profile_create(profile_sum)
 	for search_data in searchs:
 		logger.info(search_data)
 		location = search_data.location
-		#Profileの中で一番日付が最新のものを取得
-		profile = Profile.objects.all().order_by('-date')[0]
+		
 		user_agent = search_data.user_agent
 		work(airplane_mode, location.latitude, location.longitude, search_data.search, profile, user_agent.user_agent)
 		
