@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils import timezone
 
 # Create your models here.
 
@@ -68,10 +69,12 @@ class SearchResult(models.Model):
     success = models.BooleanField()
     memo = models.TextField()
     Device = models.ForeignKey(Device, on_delete=models.CASCADE, null=True)
+    ip = models.GenericIPAddressField(null=True)
     
     def __str__(self):
-        return str(self.datetime.strftime('%Y年%m月%d日 %H:%M')) + " " + self.search.search 
-    
+        #日本時間で表示
+
+        return f'{self.search} {self.datetime.astimezone(timezone.get_current_timezone()).strftime("%Y-%m-%d %H:%M:%S")} {self.success}'
 
 
 

@@ -3,6 +3,7 @@ from django.utils.html import format_html
 from .models import Location, Profile, UserAgent, Search, SearchResult, Device
 from django.contrib import auth
 from django.utils import timezone
+import datetime
 
 admin.site.unregister(auth.models.User)
 admin.site.unregister(auth.models.Group)
@@ -17,7 +18,7 @@ class SearchResultAdmin(admin.ModelAdmin):
     list_display = ('datetime', 'success', 'colored_result')
 
     def colored_result(self, obj):
-        color = 'red' if not obj.success else 'black'
+        color = 'red' if not obj.success else 'white'
         return format_html('<span style="color: {};">{}</span>', color, obj.search)
     colored_result.short_description = 'Result'
 
@@ -26,7 +27,9 @@ class SearchAdmin(admin.ModelAdmin):
     list_display = ('search', 'location', 'user_agent', 'count_by_day', 'rest_time', 'today_results','all_results', 'manual_task_submit_from_list' )
 
     def today_results(self, obj):
-        results = obj.searchresult_set.filter(datetime__date=timezone.now().date())
+        # 本日の検索結果を取得
+        results = obj.searchresult_set.filter(datetime__date=datetime.datetime.now().date())
+        
         # 失敗があれば赤色で表示
         if len([result for result in results if not result.success]) > 0:
             return format_html('<span style="color: red;">{}</span>', f'{len([result for result in results if result.success])}/{len(results)}')
@@ -55,7 +58,7 @@ class SearchAdmin(admin.ModelAdmin):
     manual_task_submit.short_description = '手動タスク実行'
     
     def today_results_list(self, obj):
-        results = obj.searchresult_set.filter(datetime__date=timezone.now().date())
+        results = obj.searchresult_set.filter(datetime__date=datetime.datetime.now().date())
         links = []
         for result in results:
             url = f"/admin/appiumng/searchresult/{result.id}/change/"

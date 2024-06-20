@@ -12,8 +12,8 @@ import logging
 from selenium.webdriver.common.action_chains import ActionChains, ActionBuilder, PointerInput
 from selenium.webdriver.common.actions import interaction
 from selenium.webdriver.common.keys import Keys
-from appiumng.models import Search, Profile, Device
-
+from appiumng.models import Search, Profile, Device, SearchResult
+from django.utils import timezone
     
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -391,7 +391,8 @@ def search_data(driver, search_word, UA, profile,latitude, longitude, ip=""):
 	
 	time.sleep(1)
 
-	change_ua(driver, UA)
+	if UA != "no-UA":
+		change_ua(driver, UA)
 	time.sleep(1)
 
 
@@ -622,96 +623,118 @@ def work(airplane_mode, latitude, longitude, search_word, profile, UA):
 		"startIWDP": True
 	})
 	url = "http://host.docker.internal:4444/wd/hub"
-	driver = webdriver.Remote(url, options=options)
-	driver.implicitly_wait(3)
-	time.sleep(1)
-
-	driver.terminate_app('com.apple.mobilesafari')
-	if airplane_mode:
-		change_airplane_mode(driver)
-	logger.info("ホームに戻る")
-	driver.execute_script('mobile: pressButton', {'name': 'home'})
-	
-
-	logger.info("位置情報を設定")
-	logger.info(latitude)
-	logger.info(longitude)
-
-	if latitude == 0 and longitude == 0:
-		logger.info("位置情報を設定しない")
-	else:
-		driver.set_location(latitude,longitude, 0)
-	time.sleep(1)
-	
-	native_UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 14_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.1 Mobile/15E148 Safari/604.1'
-	change_ua(driver, native_UA)
-	time.sleep(1)
-	ip = ""
-	count = 0
-	while True:
-		logger.info(count)
-		if count > 5:
-			element = driver.find_element(by=AppiumBy.XPATH, value='//*[@id="tmContHeadStr"]/div/div[1]/div[3]/div[1]')
-			element.click()
-		time.sleep(5)
-		driver.get('https://www.cman.jp/network/support/go_access.cgi')
-		time.sleep(5)
-		logger.info(driver.contexts)
+	try:
+		driver = webdriver.Remote(url, options=options)
+		driver.implicitly_wait(3)
 		time.sleep(1)
-		logger.info(driver.contexts)
-		time.sleep(1)
-		logger.info(driver.contexts)
-		for i in range(len(driver.contexts)):
-			logger.info(driver.contexts[i])
+		udid = driver.capabilities.get('udid', 'UDID not available')
+		logger.info(udid)
+		device = Device.objects.get(udid=udid)
+		logger.info(device)
+	
+		driver.terminate_app('com.apple.mobilesafari')
+		if airplane_mode:
+			change_airplane_mode(driver)
+		logger.info("ホームに戻る")
+		driver.execute_script('mobile: pressButton', {'name': 'home'})
+		
 
-			if i == 0:
-				continue
-			try:
-				driver.switch_to.context(driver.contexts[i])
-				time.sleep(1)
-				ip = driver.find_element(by=AppiumBy.XPATH, value='//*[@id="tmContHeadStr"]/div/div[1]/div[3]/div[1]').text
-			except:
-				pass
-			if ip == "":
-				count += 1
-				continue
-			else:
-				break
-		if ip == "":
-			driver.terminate_app('com.apple.mobilesafari')
-			time.sleep(1)
-			logger.info(driver.context)
-			driver.switch_to.context('NATIVE_APP')
-			logger.info(driver.context)
+		logger.info("位置情報を設定")
+		logger.info(latitude)
+		logger.info(longitude)
+
+		if latitude == 0 and longitude == 0:
+			logger.info("位置情報を設定しない")
 		else:
-			logger.info('ip:')
-			logger.info(ip)
-			break
+			driver.set_location(latitude,longitude, 0)
+		time.sleep(1)
+		
+		native_UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 14_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.1 Mobile/15E148 Safari/604.1'
+		change_ua(driver, native_UA)
+		time.sleep(1)
+		ip = ""
+		count = 0
+		while True:
+			logger.info(count)
+			if count > 5:
+				element = driver.find_element(by=AppiumBy.XPATH, value='//*[@id="tmContHeadStr"]/div/div[1]/div[3]/div[1]')
+				element.click()
+			time.sleep(5)
+			driver.get('https://www.cman.jp/network/support/go_access.cgi')
+			time.sleep(5)
+			logger.info(driver.contexts)
+			time.sleep(1)
+			logger.info(driver.contexts)
+			time.sleep(1)
+			logger.info(driver.contexts)
+			for i in range(len(driver.contexts)):
+				logger.info(driver.contexts[i])
+
+				if i == 0:
+					continue
+				try:
+					driver.switch_to.context(driver.contexts[i])
+					time.sleep(1)
+					ip = driver.find_element(by=AppiumBy.XPATH, value='//*[@id="tmContHeadStr"]/div/div[1]/div[3]/div[1]').text
+				except:
+					pass
+				if ip == "":
+					count += 1
+					continue
+				else:
+					break
+			if ip == "":
+				driver.terminate_app('com.apple.mobilesafari')
+				time.sleep(1)
+				logger.info(driver.context)
+				driver.switch_to.context('NATIVE_APP')
+				logger.info(driver.context)
+			else:
+				logger.info('ip:')
+				logger.info(ip)
+				break
 
 
-	logger.info(driver.context)
-	driver.switch_to.context('NATIVE_APP')
-	logger.info(driver.context)
-	time.sleep(1)
-	profile = change_profile(driver)
+		logger.info(driver.context)
+		driver.switch_to.context('NATIVE_APP')
+		logger.info(driver.context)
+		time.sleep(1)
+		profile = change_profile(driver)
 
-	search_data(driver, search_word, UA, profile, latitude, longitude, ip)
+		search_data(driver, search_word, UA, profile, latitude, longitude, ip)
 
-	time.sleep(1)
-	## safariを止める
-	driver.terminate_app('com.apple.mobilesafari')
+		time.sleep(1)
+		## safariを止める
+		driver.terminate_app('com.apple.mobilesafari')
 
 
-	logger.info("正常終了")
-	
-	time.sleep(3)
-	driver.quit()
-	time.sleep(3)
-	logger.info("終了")
+		logger.info("正常終了")
+		
+		time.sleep(3)
+		driver.quit()
+		time.sleep(3)
+		logger.info("終了")
+		return (True, device, ip)
+	except Exception as e:
+		logger.error(e)
+		driver.quit()
+		return (False, device, ip)
 			
 			
-def profile_create(profile_sum):
+def profile_create(profile_sum, device):
 	print(profile_sum)
+	url = "http://host.docker.internal:4444/wd/hub"
+	options = AppiumOptions()
+	options.load_capabilities({
+		"platformName": "iOS",
+		"appium:automationName": "XCUITest",
+		"appium:includeSafariInWebviews": True,
+		"appium:connectHardwareKeyboard": True,
+		"startIWDP": True,
+		"udid": device.udid,
+	})
+
+
 	driver = webdriver.Remote(url, options=options)
 	driver.execute_script('mobile: pressButton', {'name': 'home'})
 	time.sleep(1)
@@ -765,18 +788,35 @@ def profile_create(profile_sum):
 @shared_task
 def appium() -> None:
 	airplane_mode = True
-	searchs = Search.objects.all()
 	#Profileの中で一番日付が最新のものを取得
 	profile = Profile.objects.all().order_by('-date')[0]
 	devices = Device.objects.all()
 	for device in devices:
-		if device
-	
-	profile_create(profile_sum)
+		device_profile = device.Profile
+		if device_profile is None or device_profile.date < profile.date:		
+			profile_sum = device.profile_sum
+			profile_create(profile_sum, device)
+			device.profile = profile
+			device.save()
+
+	searchs = Search.objects.all()
 	for search_data in searchs:
-		logger.info(search_data)
-		location = search_data.location
-		
-		user_agent = search_data.user_agent
-		work(airplane_mode, location.latitude, location.longitude, search_data.search, profile, user_agent.user_agent)
-		
+			# 1日の検索回数を超えている場合はスキップ
+			searched = SearchResult.objects.filter(search=search_data, datetime__date=datetime.datetime.now())
+			if len(searched) >= search_data.count_by_day:
+				continue
+			logger.info(search_data)
+			location = search_data.location
+			
+			user_agent = search_data.user_agent
+
+			success, device, ip = work(airplane_mode, location.latitude, location.longitude, search_data.search, profile, user_agent.user_agent)
+			search_result = SearchResult()
+			search_result.search = search_data
+			search_result.datetime = timezone.now()
+			search_result.success = success
+			logger.info(device)
+			search_result.Device = device
+			search_result.ip = ip
+			search_result.save()
+	
