@@ -620,11 +620,13 @@ def work(airplane_mode, latitude, longitude, search_word, profile, UA):
 		"appium:automationName": "XCUITest",
 		"appium:includeSafariInWebviews": True,
 		"appium:connectHardwareKeyboard": True,
-		"startIWDP": True
+		"startIWDP": True,
+		'showXcodeLog': True,
 	})
 	url = "http://host.docker.internal:4444/wd/hub"
+	driver = webdriver.Remote(url, options=options)
 	try:
-		driver = webdriver.Remote(url, options=options)
+		
 		driver.implicitly_wait(3)
 		time.sleep(1)
 		udid = driver.capabilities.get('udid', 'UDID not available')
@@ -733,6 +735,7 @@ def profile_create(profile_sum, device):
 		"startIWDP": True,
 		"udid": device.udid,
 	})
+	print(device.udid)
 
 
 	driver = webdriver.Remote(url, options=options)
@@ -781,6 +784,8 @@ def profile_create(profile_sum, device):
 		el1 = driver.find_element(by=AppiumBy.ACCESSIBILITY_ID, value="Safari")
 		el1.click()
 		time.sleep(1)
+	
+	driver.quit()
 		
 
 
@@ -794,9 +799,9 @@ def appium() -> None:
 	for device in devices:
 		device_profile = device.Profile
 		if device_profile is None or device_profile.date < profile.date:		
-			profile_sum = device.profile_sum
+			profile_sum = profile.profile_sum
 			profile_create(profile_sum, device)
-			device.profile = profile
+			device.Profile = profile
 			device.save()
 
 	searchs = Search.objects.all()
