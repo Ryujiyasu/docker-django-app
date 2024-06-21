@@ -8,3 +8,4 @@ mysqlclient
 Appium-Python-Client
 beautifulsoup4
 pandas
+django-import-export
