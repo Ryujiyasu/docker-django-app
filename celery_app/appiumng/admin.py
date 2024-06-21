@@ -4,15 +4,20 @@ from .models import Location, Profile, UserAgent, Search, SearchResult, Device
 from django.contrib import auth
 from django.utils import timezone
 import datetime
+from import_export import resources
+from import_export.admin import ImportExportModelAdmin
 
 admin.site.unregister(auth.models.User)
 admin.site.unregister(auth.models.Group)
 
+class LocationResource(resources.ModelResource):
+    class Meta:
+        model = Location
 
-
-class LocationAdmin(admin.ModelAdmin):
+class LocationAdmin(ImportExportModelAdmin):
+    resource_class = LocationResource
     list_display = ('name', 'latitude', 'longitude')
-    fields = ('name', 'latitude', 'longitude')
+
     
 class SearchResultAdmin(admin.ModelAdmin):
     list_display = ('datetime', 'success', 'colored_result')
@@ -21,6 +26,9 @@ class SearchResultAdmin(admin.ModelAdmin):
         color = 'red' if not obj.success else 'white'
         return format_html('<span style="color: {};">{}</span>', color, obj.search)
     colored_result.short_description = 'Result'
+
+
+
 
 
 class SearchAdmin(admin.ModelAdmin):

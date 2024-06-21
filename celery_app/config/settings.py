@@ -31,7 +31,8 @@ INSTALLED_APPS = [
     "polls.apps.PollsConfig",
     "appiumng.apps.AppiumngConfig",
     'django_celery_results',
-    'django_celery_beat'
+    'django_celery_beat',    
+    'import_export',
 ]
 
 MIDDLEWARE = [
