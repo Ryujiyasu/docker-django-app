@@ -394,6 +394,7 @@ def search_data(driver, search_word, UA, profile,latitude, longitude, ip=""):
 	if UA != "no-UA":
 		change_ua(driver, UA)
 	time.sleep(1)
+	logger.info("Safariを開く");
 
 
 	el3 = driver.find_element(by=AppiumBy.ACCESSIBILITY_ID, value="Safari")
@@ -612,7 +613,7 @@ def search_data(driver, search_word, UA, profile,latitude, longitude, ip=""):
 
 
 
-def work(airplane_mode, latitude, longitude, search_word, profile, UA):
+def work(airplane_mode, latitude, longitude, search_word, profile, UA, device):
 	logger.info(f'airplane_mode:{airplane_mode} latitude:{latitude} longitude:{longitude} search_word:{search_word} profile:{profile} UA:{UA}')
 	options = AppiumOptions()
 	options.load_capabilities({
@@ -622,6 +623,7 @@ def work(airplane_mode, latitude, longitude, search_word, profile, UA):
 		"appium:connectHardwareKeyboard": True,
 		"startIWDP": True,
 		'showXcodeLog': True,
+		'udid': device.udid,
 	})
 	url = "http://host.docker.internal:4444/wd/hub"
 	driver = webdriver.Remote(url, options=options)
@@ -631,8 +633,7 @@ def work(airplane_mode, latitude, longitude, search_word, profile, UA):
 		time.sleep(1)
 		udid = driver.capabilities.get('udid', 'UDID not available')
 		logger.info(udid)
-		device = Device.objects.get(udid=udid)
-		logger.info(device)
+		logger.info(device.udid)
 	
 		driver.terminate_app('com.apple.mobilesafari')
 		if airplane_mode:
@@ -723,7 +724,8 @@ def work(airplane_mode, latitude, longitude, search_word, profile, UA):
 		return (False, device, ip)
 			
 			
-def profile_create(profile_sum, device):
+def profile_create(profile, device, delete=False):
+	profile_sum = profile.profile_sum
 	print(profile_sum)
 	url = "http://host.docker.internal:4444/wd/hub"
 	options = AppiumOptions()
@@ -748,32 +750,71 @@ def profile_create(profile_sum, device):
 	el1 = driver.find_element(by=AppiumBy.ACCESSIBILITY_ID, value="Safari")
 	el1.click()
 	# delete profile
-	for i in range(200):
-		logger.info(i)
-		el2 = driver.find_elements(by=AppiumBy.XPATH, value=f"//XCUIElementTypeCell[@name=\"{i+1}\"]")
-		while len(el2) > 0:
-			el2[0].click()
-			el8 = driver.find_element(by=AppiumBy.XPATH, value="//XCUIElementTypeCell[@name=\"プロファイルを削除\"]")
-			el8.click()
-			el9 = driver.find_element(by=AppiumBy.ACCESSIBILITY_ID, value="削除")
-			el9.click()
-			time.sleep(1)
+	if delete:
+		for i in range(device.profile_num):
+			logger.info(i)
+			logger.info("delete")
 			el2 = driver.find_elements(by=AppiumBy.XPATH, value=f"//XCUIElementTypeCell[@name=\"{i+1}\"]")
-			
+			while len(el2) > 0:
+				el2[0].click()
+				el8 = driver.find_element(by=AppiumBy.XPATH, value="//XCUIElementTypeCell[@name=\"プロファイルを削除\"]")
+				el8.click()
+				el9 = driver.find_element(by=AppiumBy.ACCESSIBILITY_ID, value="削除")
+				el9.click()
+				time.sleep(1)
+				el2 = driver.find_elements(by=AppiumBy.XPATH, value=f"//XCUIElementTypeCell[@name=\"{i+1}\"]")
+		
+		device.profile_num = 0
+		device.Profile = profile
+		device.save()
+
 	# create profile
  
-	for i in range(profile_sum):
+	for i in range(device.profile_num, profile_sum):
 		logger.info(i)
-		el2 = driver.find_element(by=AppiumBy.ACCESSIBILITY_ID, value="新規プロファイル")
-		el2.click()
+		logger.info("create")
+
+		while True:
+			logger.info(i)
+			el7 = driver.find_elements(by=AppiumBy.ACCESSIBILITY_ID, value="新規プロファイル")
+			logger.info(el7)
+			logger.info("create")
+
+			if len(el7) > 0:
+				el7[0].click()
+				break
+			else :
+				actions = ActionChains(driver)
+				actions.w3c_actions = ActionBuilder(driver, mouse=PointerInput(interaction.POINTER_TOUCH, "touch"))
+				actions.w3c_actions.pointer_action.move_to_location(176, 499)
+				actions.w3c_actions.pointer_action.pointer_down()
+				actions.w3c_actions.pointer_action.move_to_location(176, 284)
+				actions.w3c_actions.pointer_action.release()
+				actions.perform()
+
+
 		el3 = driver.find_element(by=AppiumBy.CLASS_NAME, value="XCUIElementTypeTextField")
 		el3.send_keys(str(i+1))
 		el4 = driver.find_element(by=AppiumBy.ACCESSIBILITY_ID, value="Return")
 		el4.click()
 		el5 = driver.find_element(by=AppiumBy.ACCESSIBILITY_ID, value="完了")
 		el5.click()
-		el7 = driver.find_element(by=AppiumBy.XPATH, value=f"//XCUIElementTypeCell[@name=\"{i+1}\"]")
-		el7.click()
+		while True:
+			logger.info(i)
+			el7 = driver.find_elements(by=AppiumBy.XPATH, value=f"//XCUIElementTypeCell[@name=\"{i+1}\"]")
+			if len(el7) > 0:
+				el7[0].click()
+				break
+			else :
+				actions = ActionChains(driver)
+				actions.w3c_actions = ActionBuilder(driver, mouse=PointerInput(interaction.POINTER_TOUCH, "touch"))
+				actions.w3c_actions.pointer_action.move_to_location(176, 499)
+				actions.w3c_actions.pointer_action.pointer_down()
+				actions.w3c_actions.pointer_action.move_to_location(176, 284)
+				actions.w3c_actions.pointer_action.release()
+				actions.perform()
+			time.sleep(1)
+			
 		el10 = driver.find_element(by=AppiumBy.XPATH, value=f"//XCUIElementTypeCell[@name=\"Unagent\"]")
 		el10.click()
 		el11 = driver.find_elements(by=AppiumBy.ACCESSIBILITY_ID, value="checkmark")
@@ -783,9 +824,11 @@ def profile_create(profile_sum, device):
 		
 		el1 = driver.find_element(by=AppiumBy.ACCESSIBILITY_ID, value="Safari")
 		el1.click()
-		time.sleep(1)
+		device.profile_num = i + 1
+		device.save()
 	
 	driver.quit()
+
 		
 
 
@@ -794,34 +837,42 @@ def profile_create(profile_sum, device):
 def appium() -> None:
 	airplane_mode = True
 	#Profileの中で一番日付が最新のものを取得
-	profile = Profile.objects.all().order_by('-date')[0]
 	devices = Device.objects.all()
 	for device in devices:
+		profile = Profile.objects.filter(Device=device).order_by('-date')[0]
 		device_profile = device.Profile
-		if device_profile is None or device_profile.date < profile.date:		
-			profile_sum = profile.profile_sum
-			profile_create(profile_sum, device)
-			device.Profile = profile
-			device.save()
+		if device_profile != profile:
+			profile_create(profile, device, delete=True)
+
+		elif device.profile_num != profile.profile_sum:
+			profile_create(profile, device,	delete=False)
 
 	searchs = Search.objects.all()
 	for search_data in searchs:
 			# 1日の検索回数を超えている場合はスキップ
-			searched = SearchResult.objects.filter(search=search_data, datetime__date=datetime.datetime.now())
+			searched = SearchResult.objects.filter(search=search_data, datetime__date=datetime.datetime.now(), success=True)
+			logger.info(searched)
+			logger.info(search_data.count_by_day)
 			if len(searched) >= search_data.count_by_day:
 				continue
 			logger.info(search_data)
 			location = search_data.location
 			
 			user_agent = search_data.user_agent
-
-			success, device, ip = work(airplane_mode, location.latitude, location.longitude, search_data.search, profile, user_agent.user_agent)
 			search_result = SearchResult()
+
 			search_result.search = search_data
 			search_result.datetime = timezone.now()
-			search_result.success = success
+			search_result.success = True
 			logger.info(device)
 			search_result.Device = device
+			search_result.save()
+
+			success, device, ip = work(airplane_mode, location.latitude, location.longitude, search_data.search, profile, user_agent.user_agent, search_data.Device)
+			
+			search_result.datetime = timezone.now()
+			search_result.success = success
 			search_result.ip = ip
 			search_result.save()
+			time.sleep(search_data.rest_time)
 	

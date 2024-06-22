@@ -28,11 +28,13 @@ class SearchResultAdmin(admin.ModelAdmin):
     colored_result.short_description = 'Result'
 
 
+class SearchResource(resources.ModelResource):
+    class Meta:
+        model = Search
 
-
-
-class SearchAdmin(admin.ModelAdmin):
-    list_display = ('search', 'location', 'user_agent', 'count_by_day', 'rest_time', 'today_results','all_results', 'manual_task_submit_from_list' )
+class SearchAdmin(ImportExportModelAdmin):
+    resource_class = SearchResource
+    list_display = ('search', 'Device', 'location', 'user_agent', 'count_by_day', 'rest_time', 'today_results','all_results', 'manual_task_submit_from_list' )
 
     def today_results(self, obj):
         # 本日の検索結果を取得
@@ -73,10 +75,8 @@ class SearchAdmin(admin.ModelAdmin):
             color = 'red' if not result.success else 'black'
             links.append(format_html('<a href="{}" style="color: {};">{}</a>', url, color, str(result)))
         return format_html("<br>".join(links))
-    
-    today_results_list.short_description = '本日の検索結果一覧'
-    
-    
+    today_results_list.short_description = '本日の検索結果'
+
     def all_results_list(self, obj):
         results = obj.searchresult_set.all()
         links = []
@@ -85,12 +85,15 @@ class SearchAdmin(admin.ModelAdmin):
             color = 'red' if not result.success else 'black'
             links.append(format_html('<a href="{}" style="color: {};">{}</a>', url, color, str(result)))
         return format_html("<br>".join(links))
-    all_results_list.short_description = '総検索結果一覧'
+    all_results_list.short_description = '総検索結果'
 
-
+class ProfileAdmin(admin.ModelAdmin):
+    list_display = ('date', 'profile_sum', 'Device')
+    list_filter = ('Device',)
+    search_fields = ('date', 'profile_sum', 'Device')
 
 admin.site.register(Location,LocationAdmin)
-admin.site.register(Profile)
+admin.site.register(Profile, ProfileAdmin)
 admin.site.register(UserAgent)
 admin.site.register(Search, SearchAdmin)
 admin.site.register(SearchResult,SearchResultAdmin)

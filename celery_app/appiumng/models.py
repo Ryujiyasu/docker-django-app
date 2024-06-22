@@ -23,6 +23,7 @@ class Profile(models.Model):
         verbose_name_plural = 'プロフィール数設定'
     date = models.DateField()
     profile_sum = models.IntegerField()
+    Device = models.ForeignKey('Device', on_delete=models.CASCADE, null=True)
     
     def __str__(self):
         return str(self.date)
@@ -33,6 +34,7 @@ class Device(models.Model):
     Profile = models.ForeignKey(Profile, on_delete=models.CASCADE)
     active = models.BooleanField(default=True)
     udid = models.CharField(max_length=200, null=True)
+    profile_num = models.IntegerField(default=0)
     
     def __str__(self):
         return self.name
@@ -56,6 +58,7 @@ class Search(models.Model):
     user_agent = models.ForeignKey(UserAgent, on_delete=models.CASCADE, null=True)
     rest_time = models.IntegerField(default=0)
     count_by_day = models.IntegerField(default=0)
+    Device = models.ForeignKey(Device, on_delete=models.CASCADE, null=True)
     
     def __str__(self):
         return self.search
