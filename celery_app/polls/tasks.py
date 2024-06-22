@@ -59,7 +59,7 @@ def change_airplane_mode(driver):
 
 
 
-def change_profile(driver)->int:
+def change_profile(driver, device)->int:
 	driver.find_element(by=AppiumBy.ACCESSIBILITY_ID, value="Safari").click()
 	
 	
@@ -169,7 +169,7 @@ def change_profile(driver)->int:
 		elif len(el2) > 0:
 			el2[0].click()
 		else:
-			for i in range(profile_sum):
+			for i in range(device.profile_num):
 				logger.info(i)
 				now_profile = str(i + 1)
 				el5 = driver.find_elements(by=AppiumBy.ACCESSIBILITY_ID, value=f"TabGroupsButton?Profile={now_profile}")
@@ -178,9 +178,10 @@ def change_profile(driver)->int:
 					el5[0].click()
 					break
 		
+	logger.info(device.profile_num)
 		
 	if now_profile == "個人用":
-		profile = random.randint(1, profile_sum)
+		profile = random.randint(1, device.profile_num)
 		click_profile = 1
 		el7 = driver.find_element(by=AppiumBy.ACCESSIBILITY_ID, value="プロファイル")
 		el7.click()
@@ -193,10 +194,11 @@ def change_profile(driver)->int:
 		now_profile = int(now_profile)
 		
 		#1 ~ 100 の profile をnow_profile の　5 以内 でrandom選択
-		profile = random.randint(-3, 5) + now_profile
+		profile = random.randint(1, 5) + now_profile
+		logger.info(f'profile:{profile}')
 		if profile < 1:
 			profile = 1
-		elif profile > profile_sum:
+		elif profile > device.profile_num:
 			profile = 1
 		logger.info(f'profile:{profile}')
 		logger.info(f'now_profile:{now_profile}')
@@ -283,7 +285,7 @@ def change_ua(driver, UA):
 	logger.info("ホームに戻る")
 
 
-def search_data(driver, search_word, UA, profile,latitude, longitude, ip=""):
+def search_data(driver, search_word, UA, profile,latitude, longitude, ip="", device=None):
 	
 	# context をプリント
 	count = 0
@@ -702,9 +704,9 @@ def work(airplane_mode, latitude, longitude, search_word, profile, UA, device):
 		driver.switch_to.context('NATIVE_APP')
 		logger.info(driver.context)
 		time.sleep(1)
-		profile = change_profile(driver)
+		profile = change_profile(driver, device)
 
-		search_data(driver, search_word, UA, profile, latitude, longitude, ip)
+		search_data(driver, search_word, UA, profile, latitude, longitude, ip, device)
 
 		time.sleep(1)
 		## safariを止める
