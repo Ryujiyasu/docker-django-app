@@ -861,17 +861,12 @@ def appium() -> None:
 			location = search_data.location
 			
 			user_agent = search_data.user_agent
-			search_result = SearchResult()
 
-			search_result.search = search_data
-			search_result.datetime = timezone.now()
-			search_result.success = True
-			logger.info(device)
-			search_result.Device = device
-			search_result.save()
 
 			success, device, ip = work(airplane_mode, location.latitude, location.longitude, search_data.search, profile, user_agent.user_agent, search_data.Device)
-			
+			search_result = SearchResult()
+			search_result.search = search_data
+			search_result.Device = device
 			search_result.datetime = timezone.now()
 			search_result.success = success
 			search_result.ip = ip
