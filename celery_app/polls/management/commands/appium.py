@@ -9,8 +9,13 @@ from polls.tasks import appium
 
 
 class Command(BaseCommand):
+
+    def add_arguments(self, parser):
+        parser.add_argument('device', type=str, help='Device name for Appium test')
+
     def handle(self, *args, **options):  # type: ignore
-        task: AsyncResult = appium.delay()  # type: ignore
+        device = options['device']
+        task: AsyncResult = appium.delay(device)  # type: ignore
         print("task.status", task.status)  # type: ignore
 
         task_id: str = task.id  # type: ignore

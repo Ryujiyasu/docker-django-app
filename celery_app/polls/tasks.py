@@ -39,10 +39,13 @@ class WebSearcher:
 
 
 def change_airplane_mode(driver):
+		logger.info("機内モードを変更")
 		driver.terminate_app('com.apple.mobilesafari')
-
+		driver.execute_script('mobile: pressButton', {'name': 'home'})
+		logger.info("Safariを終了")
+		el1 = driver.find_element(by=AppiumBy.ACCESSIBILITY_ID, value="設定")
+		el1.click()
 		el1 = driver.find_element(by=AppiumBy.CLASS_NAME, value="XCUIElementTypeSwitch")
-		
 		value = el1.get_attribute("value")
 		logger.info(value)
 		if value == "0":
@@ -54,6 +57,7 @@ def change_airplane_mode(driver):
 			el1.click()
 
 		time.sleep(1)
+		logger.info("機内モードを変更")
 		el2 = driver.find_element(by=AppiumBy.CLASS_NAME, value="XCUIElementTypeSwitch")
 		el2.click()
 
@@ -626,19 +630,26 @@ def work(airplane_mode, latitude, longitude, search_word, profile, UA, device):
 		"startIWDP": True,
 		'showXcodeLog': True,
 		'udid': device.udid,
+		'wdaLocalPort': device.system_port,
 	})
-	url = "http://host.docker.internal:4444/wd/hub"
+	host = device.host
+	port = device.port
+	url = f"http://{host}:{port}"
+	logger.info(url)
 	driver = webdriver.Remote(url, options=options)
+	ip = ""
 	try:
-		
+		logger.info("start")
 		driver.implicitly_wait(3)
 		time.sleep(1)
+
 		udid = driver.capabilities.get('udid', 'UDID not available')
 		logger.info(udid)
 		logger.info(device.udid)
-	
+		logger.info("機内モードを変更")
 		driver.terminate_app('com.apple.mobilesafari')
 		if airplane_mode:
+			logger.info("機内モードをONにします")
 			change_airplane_mode(driver)
 		logger.info("ホームに戻る")
 		driver.execute_script('mobile: pressButton', {'name': 'home'})
@@ -729,7 +740,9 @@ def work(airplane_mode, latitude, longitude, search_word, profile, UA, device):
 def profile_create(profile, device, delete=False):
 	profile_sum = profile.profile_sum
 	print(profile_sum)
-	url = "http://host.docker.internal:4444/wd/hub"
+	host = device.host
+	port = device.port
+	url = f"http://{host}:{port}"
 	options = AppiumOptions()
 	options.load_capabilities({
 		"platformName": "iOS",
@@ -738,6 +751,7 @@ def profile_create(profile, device, delete=False):
 		"appium:connectHardwareKeyboard": True,
 		"startIWDP": True,
 		"udid": device.udid,
+		"wdaLocalPort": device.system_port,
 	})
 	print(device.udid)
 
@@ -836,20 +850,19 @@ def profile_create(profile, device, delete=False):
 
 
 @shared_task
-def appium() -> None:
+def appium(device_name) -> None:
 	airplane_mode = True
 	#Profileの中で一番日付が最新のものを取得
-	devices = Device.objects.all()
-	for device in devices:
-		profile = Profile.objects.filter(Device=device).order_by('-date')[0]
-		device_profile = device.Profile
-		if device_profile != profile:
-			profile_create(profile, device, delete=True)
+	device = Device.objects.get(name=device_name)
+	profile = Profile.objects.filter(Device=device).order_by('-date')[0]
+	device_profile = device.Profile
+	if device_profile != profile:
+		profile_create(profile, device, delete=True)
 
-		elif device.profile_num != profile.profile_sum:
-			profile_create(profile, device,	delete=False)
+	elif device.profile_num != profile.profile_sum:
+		profile_create(profile, device,	delete=False)
 
-	searchs = Search.objects.all()
+	searchs = Search.objects.filter(Device=device)
 	for search_data in searchs:
 			# 1日の検索回数を超えている場合はスキップ
 			searched = SearchResult.objects.filter(search=search_data, datetime__date=datetime.datetime.now(), success=True)

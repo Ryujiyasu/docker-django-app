@@ -35,8 +35,9 @@ class Device(models.Model):
     active = models.BooleanField(default=True)
     udid = models.CharField(max_length=200, null=True)
     profile_num = models.IntegerField(default=0)
-    host = models.GenericIPAddressField(null=True)
+    host = models.CharField(max_length=200, null=True)
     port = models.IntegerField(default=4723)
+    system_port = models.IntegerField(default=8200)
     
     def __str__(self):
         return self.name
