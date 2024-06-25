@@ -3,9 +3,12 @@ from django.utils.html import format_html
 from .models import Location, Profile, UserAgent, Search, SearchResult, Device
 from django.contrib import auth
 from django.utils import timezone
+from django.urls import path
 import datetime
 from import_export import resources
 from import_export.admin import ImportExportModelAdmin
+from .resources import SearchResource, DeviceResource
+from .views import export_view, import_view
 
 admin.site.unregister(auth.models.User)
 admin.site.unregister(auth.models.Group)
@@ -28,9 +31,7 @@ class SearchResultAdmin(admin.ModelAdmin):
     colored_result.short_description = 'Result'
 
 
-class SearchResource(resources.ModelResource):
-    class Meta:
-        model = Search
+
 
 class SearchAdmin(ImportExportModelAdmin):
     resource_class = SearchResource
@@ -92,9 +93,39 @@ class ProfileAdmin(admin.ModelAdmin):
     list_filter = ('Device',)
     search_fields = ('date', 'profile_sum', 'Device')
 
+class DeviceAdmin(ImportExportModelAdmin):
+    resource_class = DeviceResource
+
+    def change_view(self, request, object_id, form_url='', extra_context=None):
+        extra_context = extra_context or {}
+        extra_context['opts'] = self.model._meta
+        return super().change_view(request, object_id, form_url, extra_context=extra_context)
+
+    def get_urls(self):
+        urls = super().get_urls()
+        custom_urls = [
+            path(
+                '<path:object_id>/export/',
+                self.admin_site.admin_view(self.export_view),
+                name='appiumng_device_export',
+            ),
+            path(
+                '<path:object_id>/import/',
+                self.admin_site.admin_view(self.import_view),
+                name='appiumng_device_import',
+            ),
+        ]
+        return custom_urls + urls
+
+    def export_view(self, request, object_id, *args, **kwargs):
+        return export_view(request, object_id)
+
+    def import_view(self, request, object_id, *args, **kwargs):
+        return import_view(request, object_id)
+
 admin.site.register(Location,LocationAdmin)
 admin.site.register(Profile, ProfileAdmin)
 admin.site.register(UserAgent)
 admin.site.register(Search, SearchAdmin)
 admin.site.register(SearchResult,SearchResultAdmin)
-admin.site.register(Device)
+admin.site.register(Device, DeviceAdmin)

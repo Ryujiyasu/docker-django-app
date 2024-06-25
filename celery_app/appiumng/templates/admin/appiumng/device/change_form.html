@@ -1,0 +1,19 @@
+<!-- appiumng/templates/admin/appiumng/device/change_form.html -->
+{% extends "admin/change_form.html" %}
+{% load static %}
+
+{% block content %}
+    {{ block.super }}
+    <h3>関連する検索ワード一覧</h3>
+    <ul>
+        {% for search in original.search_set.all %}
+            <li><a href="/admin/appiumng/search/{{ search.id }}/change/">{{ search.search }}</li>
+        {% empty %}
+            <li>No search words associated with this device.</li>
+        {% endfor %}
+    </ul>
+    <div class="submit-row">
+        <a href="{% url 'admin:appiumng_device_export' original.id %}" class="button">Export</a>
+        <a href="{% url 'admin:appiumng_device_import' original.id %}" class="button">Import</a>
+    </div>
+{% endblock %}
