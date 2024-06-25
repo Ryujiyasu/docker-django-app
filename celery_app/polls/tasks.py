@@ -119,8 +119,10 @@ def change_profile(driver, device)->int:
 			time.sleep(1)
 
 	time.sleep(1)
+	counter = 0
 	while True:
 		el4 = driver.find_elements(by=AppiumBy.XPATH, value='//XCUIElementTypeOther[@name="favoritesItemIdentifierHeader"]/XCUIElementTypeOther/XCUIElementTypeStaticText')
+		logger.info(el4)
 		if len(el4) > 0:
 			break
 		logger.info("再度確認")
@@ -136,6 +138,13 @@ def change_profile(driver, device)->int:
 			if len(el4) > 0:
 				el4[0].click()
 				time.sleep(1)
+		counter += 1
+		logger.info(counter)
+		el2 = driver.find_elements(by=AppiumBy.ACCESSIBILITY_ID, value="NewTabButton")
+		if len(el2) > 0:
+			el2[0].click()
+		if counter > 2:
+			break
 
 
 
@@ -457,7 +466,7 @@ def search_data(driver, search_word, UA, profile,latitude, longitude, ip="", dev
 			el2[0].send_keys(search_word)
 			el2[0].send_keys(Keys.RETURN)
 
-			
+		logger.info(search_word)
 		logger.info("検索ボタンをクリック")
 		driver.switch_to.context('NATIVE_APP')
 		logger.info(driver.context)
@@ -479,25 +488,26 @@ def search_data(driver, search_word, UA, profile,latitude, longitude, ip="", dev
 
 
 		driver.switch_to.context(driver.contexts[1])
-
-		driver.refresh()
+		while True:
+			driver.refresh()
+			
+			logger.info(driver.context)
+			time.sleep(3)
 		
-		logger.info(driver.context)
-		time.sleep(3)
-	
-		logger.info("検索結果を取得(sp)")	
-		elements = driver.find_elements(by=AppiumBy.CLASS_NAME, value="MjjYud")
+			logger.info("検索結果を取得(sp)")	
+			elements = driver.find_elements(by=AppiumBy.CLASS_NAME, value="MjjYud")
 
-		logger.info("検索結果を取得(pc)")
-		elements_pc = driver.find_elements(by=AppiumBy.CSS_SELECTOR, value=".egMi0.kCrYT")
+			logger.info("検索結果を取得(pc)")
+			elements_pc = driver.find_elements(by=AppiumBy.CSS_SELECTOR, value=".egMi0.kCrYT")
+			logger.info("検索結果を取得")
+			logger.info(elements)
+			logger.info(elements_pc)
 
-		if len(elements) == 0 < len(elements_pc):
-			elements = elements_pc
-		#google 検索結果 10件をCSVに保存
-		logger.info("検索結果を取得")
-		logger.info(elements)
-		logger.info(elements_pc)
-		
+			if len(elements) < len(elements_pc):
+				elements = elements_pc
+			#google 検索結果 10件をCSVに保存
+			if len(elements) > 0:
+				break
 		target_a = None
 		target_title = None
 		logger.info("output.csvに書き込み")

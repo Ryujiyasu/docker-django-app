@@ -20,7 +20,7 @@ class LocationAdmin(ImportExportModelAdmin):
 
     
 class SearchResultAdmin(admin.ModelAdmin):
-    list_display = ('datetime', 'success', 'colored_result')
+    list_display = ('datetime', "Device", 'success', 'colored_result')
 
     def colored_result(self, obj):
         color = 'red' if not obj.success else 'white'
