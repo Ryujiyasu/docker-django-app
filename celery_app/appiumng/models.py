@@ -29,7 +29,7 @@ class Profile(models.Model):
         return str(self.date)
     
 class Device(models.Model):
-    name = models.CharField(max_length=200)
+    name = models.CharField(max_length=200, unique=True)
     platform = models.CharField(max_length=200, choices=(('ios', 'iOS'), ('android', 'Android')))
     Profile = models.ForeignKey(Profile, on_delete=models.CASCADE)
     active = models.BooleanField(default=True)

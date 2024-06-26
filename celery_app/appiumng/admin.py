@@ -37,6 +37,13 @@ class SearchAdmin(ImportExportModelAdmin):
     resource_class = SearchResource
     list_display = ('search', 'Device', 'location', 'user_agent', 'count_by_day', 'rest_time', 'today_results','all_results', 'manual_task_submit_from_list' )
 
+    def get_changeform_initial_data(self, request):
+        deviceId = request.GET.get('device')
+        if deviceId:
+            return {
+                'Device': deviceId
+            }
+
     def today_results(self, obj):
         # 本日の検索結果を取得
         results = obj.searchresult_set.filter(datetime__date=datetime.datetime.now().date())
@@ -118,6 +125,7 @@ class DeviceAdmin(ImportExportModelAdmin):
         return custom_urls + urls
 
     def export_view(self, request, object_id, *args, **kwargs):
+    
         return export_view(request, object_id)
 
     def import_view(self, request, object_id, *args, **kwargs):

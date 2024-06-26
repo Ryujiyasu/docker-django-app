@@ -15,5 +15,6 @@
     <div class="submit-row">
         <a href="{% url 'admin:appiumng_device_export' original.id %}" class="button">Export</a>
         <a href="{% url 'admin:appiumng_device_import' original.id %}" class="button">Import</a>
+        <a href="/admin/appiumng/search/add/?device={{original.id}}" class="button">ワードの追加</a>
     </div>
 {% endblock %}
